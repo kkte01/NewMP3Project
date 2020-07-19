@@ -115,6 +115,11 @@ public class MainActivity extends AppCompatActivity {
             case R.id.changeFragment1 : changeScreen(1); break;
             case R.id.changeFragment2 : changeScreen(2); break;
             case R.id.changeFragment3 : changeScreen(3); break;
+            case R.id.oMMoveDrawBoard : Intent intent2 = new Intent(getApplicationContext(),Main2Activity.class);
+                startActivity(intent2); finish(); break;
+            case R.id.oMPhotoShop : Intent intent3 = new Intent(getApplicationContext(),Main3Activity.class);
+                startActivity(intent3); finish(); break;
+
         }
         return super.onOptionsItemSelected(item);
     }

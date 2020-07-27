@@ -69,7 +69,7 @@ public class MusicPlayerFragment extends Fragment {
         MimeTypeMap mimeTypeMap = MimeTypeMap.getSingleton();
 
 
-        //확장자 가져오기
+        /*//확장자 가져오기
         for(File file : files){
             String extension = MimeTypeMap.getFileExtensionFromUrl(Uri.fromFile(file).toString());
             String fileName = file.getName();
@@ -93,6 +93,6 @@ public class MusicPlayerFragment extends Fragment {
                 MusicData musicData = new MusicData(bitmap,musicName,artistName,0,false,duration);
                 arrayList.add(musicData);
             }
-        }
+        }*/
     }
 }

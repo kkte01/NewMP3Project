@@ -3,67 +3,77 @@ package com.example.mp3playerproject;
 import android.graphics.Bitmap;
 
 public class MusicData {
-    private Bitmap MusicAlbum;
-    private String MusicName;
-    private String Artist;
-    private int count;
-    private boolean liked;
-    private String Duration;
+    private String id;
+    private String artist;
+    private String title;
+    private String albumArt;
+    private String duration;
+    private int click;
+    private int liked;
 
-    public MusicData(Bitmap musicAlbum, String musicName, String artist, int count, boolean liked, String duration) {
-        MusicAlbum = musicAlbum;
-        MusicName = musicName;
-        Artist = artist;
-        this.count = count;
+    public MusicData(String id, String artist, String title, String albumArt, String duration, int click, int liked) {
+        this.id = id;
+        this.artist = artist;
+        this.title = title;
+        this.albumArt = albumArt;
+        this.duration = duration;
+        this.click = click;
         this.liked = liked;
-        Duration = duration;
     }
 
-    public Bitmap getMusicAlbum() {
-        return MusicAlbum;
+    public String getId() {
+        return id;
     }
 
-    public void setMusicAlbum(Bitmap musicAlbum) {
-        MusicAlbum = musicAlbum;
-    }
-
-    public String getMusicName() {
-        return MusicName;
-    }
-
-    public void setMusicName(String musicName) {
-        MusicName = musicName;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getArtist() {
-        return Artist;
+        return artist;
     }
 
     public void setArtist(String artist) {
-        Artist = artist;
+        this.artist = artist;
     }
 
-    public int getCount() {
-        return count;
+    public String getTitle() {
+        return title;
     }
 
-    public void setCount(int count) {
-        this.count = count;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
-    public boolean isLiked() {
-        return liked;
+    public String getAlbumArt() {
+        return albumArt;
     }
 
-    public void setLiked(boolean liked) {
-        this.liked = liked;
+    public void setAlbumArt(String albumArt) {
+        this.albumArt = albumArt;
     }
 
     public String getDuration() {
-        return Duration;
+        return duration;
     }
 
     public void setDuration(String duration) {
-        Duration = duration;
+        this.duration = duration;
+    }
+
+    public int getClick() {
+        return click;
+    }
+
+    public void setClick(int click) {
+        this.click = click;
+    }
+
+    public int getLiked() {
+        return liked;
+    }
+
+    public void setLiked(int liked) {
+        this.liked = liked;
     }
 }

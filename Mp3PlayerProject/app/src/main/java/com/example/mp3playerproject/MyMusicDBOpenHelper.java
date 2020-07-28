@@ -130,10 +130,11 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
     }
     //DB에 있는 좋아요를 누른 리스트만 불러오는 함수
     public ArrayList<MusicData> setLikeMusicDataList(){
-        ArrayList<MusicData>musicData = null;
+        ArrayList<MusicData>musicData = new ArrayList<MusicData>();
         SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
         String query =  "select * from myMusicTBL where liked = 1;";
         Cursor cursor = sqLiteDatabase.rawQuery(query,null);
+
         while (cursor.moveToNext()){
             String id = cursor.getString(0);
             String artist = cursor.getString(1);
@@ -167,8 +168,14 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
     public void increaseOrDicreaseDatabase(ArrayList<MusicData>musicData,int i){
         //db열기
         SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
-        String query = "update myMusicTBL set liked = "+musicData.get(i).getLiked()+"where id = '"+
-                musicData.get(i).getId()+"';";
+        String query = "";
+        if(musicData.get(i).getLiked() == 1){
+            query = "update myMusicTBL set liked = "+musicData.get(i).getLiked()+" where id = '"+
+                    musicData.get(i).getId()+"';";
+        }else{
+            query = "update myMusicTBL set liked = "+0+" where id = '"+
+                    musicData.get(i).getId()+"';";
+        }
         sqLiteDatabase.execSQL(query);
         sqLiteDatabase.close();
     }

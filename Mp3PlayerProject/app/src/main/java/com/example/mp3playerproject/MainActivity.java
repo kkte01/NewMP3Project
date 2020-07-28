@@ -25,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private DrawerLayout drawerLayout;
     private RecyclerView recyclerView, recyclerLike;
     private RecyclerMusicListAdapter musicListAdapter;
-    private RecyclerMusicListAdapter LikemusicListAdapter;
+    private RecyclerMusicListAdapter likemusicListAdapter;
     private LinearLayoutManager linearLayoutManager;
     private LinearLayoutManager linearLayoutLikeManager;
     private ArrayList<MusicData>arrayList;
@@ -53,8 +53,8 @@ public class MainActivity extends AppCompatActivity {
         //어댑터 생성
         musicListAdapter = new RecyclerMusicListAdapter(getApplicationContext(),arrayList);
         musicListAdapter.setContext(getApplicationContext());
-        LikemusicListAdapter = new RecyclerMusicListAdapter(getApplicationContext(),arrayLikeList);
-        LikemusicListAdapter.setContext(getApplicationContext());
+        likemusicListAdapter = new RecyclerMusicListAdapter(getApplicationContext(),arrayLikeList);
+        likemusicListAdapter.setContext(getApplicationContext());
 
         //LinearLayoutManager 설정
         linearLayoutManager = new LinearLayoutManager(getApplicationContext());
@@ -62,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //음악파일을 가져와서 DB에 저장
-        //boolean flag = myMusicDBOpenHelper.insertMusicDatabase();
+        boolean flag = myMusicDBOpenHelper.insertMusicDatabase();
         /*if(flag != false){
             Toast.makeText(getApplicationContext(),"데이터불러오기 성공",Toast.LENGTH_SHORT).show();
         }else{
@@ -75,19 +75,20 @@ public class MainActivity extends AppCompatActivity {
             ft.commit();
 
         //arrayList에 넣기
-        arrayList = myMusicDBOpenHelper.compareArrayList();
+        arrayList = myMusicDBOpenHelper.setMusicDataRecycleView();
         arrayLikeList = myMusicDBOpenHelper.setLikeMusicDataList();
 
         //RecycleView에 넣어주기
         recyclerView.setAdapter(musicListAdapter);
         recyclerView.setLayoutManager(linearLayoutManager);
 
-        recyclerLike.setAdapter(LikemusicListAdapter);
+        recyclerLike.setAdapter(likemusicListAdapter);
         recyclerLike.setLayoutManager(linearLayoutLikeManager);
 
         //어댑터 리스트 연결해주기
         musicListAdapter.setDataArrayList(arrayList);
-        //LikemusicListAdapter.setDataArrayList(arrayLikeList);
+        likemusicListAdapter.setDataArrayList(arrayLikeList);
+
 
 
         //frameLayout drag event
@@ -109,8 +110,10 @@ public class MainActivity extends AppCompatActivity {
                         if(Math.abs(dx) > Math.abs((dy))){
                             if(dx > 0){
                                 drawerLayout.openDrawer(Gravity.LEFT,true);
+                                likemusicListAdapter.notifyDataSetChanged();
                             }else{
                                 drawerLayout.openDrawer(Gravity.RIGHT,true);
+                                musicListAdapter.notifyDataSetChanged();
                             }
                         }
                         break;
@@ -120,14 +123,6 @@ public class MainActivity extends AppCompatActivity {
         });
 
         //RecycleView에 클릭에 관한 이벤트 등록
-        /*musicListAdapter.setItemClickListener(new RecyclerMusicListAdapter.OnItemClickListener() {
-            @RequiresApi(api = Build.VERSION_CODES.N)
-            @Override
-            public void onItemClick(View view, int pos) {
-                MusicPlayerFragment musicPlayerFragment = new MusicPlayerFragment();
-                musicPlayerFragment.selectedMusicPlayAndScreenSetting(arrayList,musicListAdapter.getAdapterPosition());
-            }
-        });*/
         musicListAdapter.setOnItemClickListener(new RecyclerMusicListAdapter.OnItemClickListener() {
             @RequiresApi(api = Build.VERSION_CODES.N)
             @Override
@@ -135,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
                 ((MusicPlayerFragment)fragment).selectedMusicPlayAndScreenSetting(pos);
                 Toast.makeText(getApplicationContext(),"위치 = "+pos,Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
-
+                musicListAdapter.notifyDataSetChanged();
             }
         });
 
@@ -153,15 +148,34 @@ public class MainActivity extends AppCompatActivity {
         super.onDestroy();
 
     }
-
+    //get, set
     public ArrayList<MusicData> getArrayList() {
         return arrayList;
+    }
+
+    public void setMusicListAdapter(RecyclerMusicListAdapter musicListAdapter) {
+        this.musicListAdapter = musicListAdapter;
+    }
+
+    public void setLikemusicListAdapter(RecyclerMusicListAdapter likemusicListAdapter) {
+        this.likemusicListAdapter = likemusicListAdapter;
+    }
+
+    public void setArrayList(ArrayList<MusicData> arrayList) {
+        this.arrayList = arrayList;
+    }
+
+    public void setArrayLikeList(ArrayList<MusicData> arrayLikeList) {
+        this.arrayLikeList = arrayLikeList;
     }
 
     public ArrayList<MusicData> getArrayLikeList() {
         return arrayLikeList;
     }
 
+    public RecyclerMusicListAdapter getLikemusicListAdapter() {
+        return likemusicListAdapter;
+    }
 
     public int getPosition() {
         return position;

@@ -21,6 +21,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -137,6 +138,18 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
                 }
                 break;
             case R.id.ibLike :
+                myMusicDBOpenHelper = mainActivity.getMyMusicDBOpenHelper();
+
+                if(ibLike.isActivated()){
+                    Toast.makeText(mainActivity,"좋아요 해제!",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mainActivity,"좋아요 목록에서 삭제완료",Toast.LENGTH_SHORT).show();
+                    ibLikeUpdateLiked(false,0);
+                }else {
+                    Toast.makeText(mainActivity,"좋아요 !",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mainActivity,"좋아요 목록에 추가완료",Toast.LENGTH_SHORT).show();
+                    ibLikeUpdateLiked(true,1);
+                }
+
                 break;
             default:break;
         }
@@ -187,6 +200,8 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
 
         if(data.getLiked() ==1){
             ibLike.setActivated(true);
+        }else{
+            ibLike.setActivated(false);
         }
         Uri musicURI = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,data.getId());
         try {
@@ -231,5 +246,15 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
             }
         });
         thread.start();
+    }
+    //하트 버튼에 관한 DB업데이트 및 무효화영역처리에 관한 함수
+    private void ibLikeUpdateLiked(boolean b,int i){
+        ibLike.setActivated(b);
+        ArrayList<MusicData>musicData = mainActivity.getArrayList();
+        musicData.get(index).setLiked(i);
+        myMusicDBOpenHelper.increaseOrDicreaseDatabase(mainActivity.getArrayList(),index);
+        RecyclerMusicListAdapter recyclerMusicListAdapter =mainActivity.getLikemusicListAdapter();
+        mainActivity.setArrayLikeList(myMusicDBOpenHelper.setLikeMusicDataList());
+        recyclerMusicListAdapter.notifyDataSetChanged();
     }
 }

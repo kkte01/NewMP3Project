@@ -1,6 +1,5 @@
 package com.example.mp3playerproject;
 
-import android.graphics.Bitmap;
 
 public class MusicData {
     private String id;

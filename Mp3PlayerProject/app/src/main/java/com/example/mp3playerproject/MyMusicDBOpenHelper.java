@@ -2,6 +2,7 @@ package com.example.mp3playerproject;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.MediaStore;
@@ -17,6 +18,15 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
         super(context, "myMusicTBL", null, version);
         this.context = context;
     }
+
+    public Context getContext() {
+        return context;
+    }
+
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
     //테이블을 만드는 함수
     @Override
     public void onCreate(SQLiteDatabase sqLiteDatabase) {
@@ -41,36 +51,41 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
 
     //DB에 음악리스트를 저장하는 함수
     public boolean insertMusicDatabase(){
+        //db 열기
+        SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
         boolean returnValue = false;
+
         String[] data ={
                 MediaStore.Audio.Media._ID,
                 MediaStore.Audio.Media.ARTIST,
                 MediaStore.Audio.Media.TITLE,
                 MediaStore.Audio.Media.ALBUM_ID,
                 MediaStore.Audio.Media.DURATION};
+
+        String selection = MediaStore.Audio.Media.DATA+" like ?";
+        String selection1 = MediaStore.Audio.Media.IS_MUSIC + "!= 0";
+
         //"ASC" 오름차순 정렬
         Cursor cursor = context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-                data,null,null,MediaStore.Audio.Media.TITLE+" ASC");
-        //db 열기
-        SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
+                data,selection,new String[]{"%Music1%"},data[2]+" ASC");
         try {
             //db에 넣기
             if (cursor != null) {
                 while (cursor.moveToNext()) {
                     //음악안에 있는 데이터들 가져오기
-                    String id = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media._ID));
-                    String artist = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ARTIST));
-                    String title = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.TITLE));
-                    String albumArt = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.ALBUM_ID));
-                    String duration = cursor.getString(cursor.getColumnIndex(MediaStore.Audio.Media.DURATION));
-
-                    String query = "insert into myMusicTBL valuse(" +
+                    String id = cursor.getString(cursor.getColumnIndex(data[0]));
+                    String artist = cursor.getString(cursor.getColumnIndex(data[1]));
+                    String title = cursor.getString(cursor.getColumnIndex(data[2]));
+                    String albumArt = cursor.getString(cursor.getColumnIndex(data[3]));
+                    String duration = cursor.getString(cursor.getColumnIndex(data[4]));
+                    Log.d("DBinsert" ,id);
+                    String query = "insert into myMusicTBL values(" +
                             "'" + id + "'," +
                             "'" + artist + "'," +
                             "'" + title + "'," +
                             "'" + albumArt + "'," +
                             "'" + duration + "'," +
-                            0 + "," + 0 + ",);";
+                            0 + "," + 0 +");";
                     sqLiteDatabase.execSQL(query);
                 }
             }
@@ -86,12 +101,15 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
             cursor.close();
         }
 
+
     }
     //DB에 있는 음악 리스트를 RecycleView에 저장하는 함수
     public ArrayList<MusicData> setMusicDataRecycleView(){
-        ArrayList<MusicData>musicData = null;
-        SQLiteDatabase sqLiteDatabase = this.getReadableDatabase();
+
+        ArrayList<MusicData>musicData = new ArrayList<MusicData>();
+        SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
         Cursor cursor = sqLiteDatabase.rawQuery("select * from myMusicTBL",null);
+
         while (cursor.moveToNext()){
             String id = cursor.getString(0);
             String artist = cursor.getString(1);
@@ -158,9 +176,107 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
     public void increaseClickCount(ArrayList<MusicData>musicData,int i){
         //db열기
         SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
-        String query = "update myMusicTBL set click = "+musicData.get(i).getClick()+"where id = '"+
+        String query = "update myMusicTBL set click = "+(musicData.get(i).getClick()+1)+" where id = '"+
                 musicData.get(i).getId()+"';";
         sqLiteDatabase.execSQL(query);
         sqLiteDatabase.close();
+    }
+    /*public void allDelete(){
+        String query  = "delete from myMusicTBL";
+        SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
+        sqLiteDatabase.execSQL(query);
+        sqLiteDatabase.close();
+    }*/
+
+    // sdCard 안의 음악을 검색한다
+    public ArrayList<MusicData> findMusic() {
+        ArrayList<MusicData> sdCardList = new ArrayList<>();
+
+
+        String[] data = {
+                MediaStore.Audio.Media._ID,
+                MediaStore.Audio.Media.ARTIST,
+                MediaStore.Audio.Media.TITLE,
+                MediaStore.Audio.Media.ALBUM_ID,
+                MediaStore.Audio.Media.DURATION};
+
+        String selection = MediaStore.Audio.Media.DATA + " like ? ";
+
+        Cursor cursor = context.getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                data, selection, new String[]{"%Music1%"}, data[2] + " ASC");
+
+        if (cursor != null) {
+            while (cursor.moveToNext()) {
+
+                // 음악 데이터 가져오기
+                String id = cursor.getString(cursor.getColumnIndex(data[0]));
+                String artist = cursor.getString(cursor.getColumnIndex(data[1]));
+                String title = cursor.getString(cursor.getColumnIndex(data[2]));
+                String albumArt = cursor.getString(cursor.getColumnIndex(data[3]));
+                String duration = cursor.getString(cursor.getColumnIndex(data[4]));
+
+                MusicData mData = new MusicData(id, artist, title, albumArt, duration, 0, 0);
+
+                sdCardList.add(mData);
+            }
+        }
+
+        return sdCardList;
+    }
+
+    // DB Select
+    public ArrayList<MusicData> selectMusicTbl() {
+
+        ArrayList<MusicData> musicDBArrayList = new ArrayList<>();
+
+        SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
+
+        // 쿼리문 입력하고 커서 리턴 받음
+        Cursor cursor = sqLiteDatabase.rawQuery("select * from myMusicTBL;", null);
+
+        while (cursor.moveToNext()) {
+            MusicData musicData = new MusicData(
+                    cursor.getString(0),
+                    cursor.getString(1),
+                    cursor.getString(2),
+                    cursor.getString(3),
+                    cursor.getString(4),
+                    cursor.getInt(5),
+                    cursor.getInt(6));
+
+            musicDBArrayList.add(musicData);
+        }
+
+        cursor.close();
+        sqLiteDatabase.close();
+
+        return musicDBArrayList;
+    }
+
+    // sdcard에서 검색한 음악과 DB를 비교해서 중복되지 않은 플레이리스트를 리턴
+    public ArrayList<MusicData> compareArrayList(){
+        ArrayList<MusicData> sdCardList = findMusic();
+        ArrayList<MusicData> dbList = selectMusicTbl();
+
+        // DB가 비었다면 sdcard리스트 리턴
+        if(dbList.isEmpty()){
+            return sdCardList;
+        }
+
+        // DB가 이미 sdcard 정보를 가지고 있다면 DB리스트를 리턴
+        if(dbList.containsAll(sdCardList)){
+            return dbList;
+        }
+
+        // 두 리스트를 비교후 중복되지 않은 값을 DB리스트에 추가후 리턴
+        for(MusicData mData : sdCardList){
+            for(MusicData mData2 : dbList){
+                if(mData.getId() == mData2.getId()){
+                    continue;
+                }
+                dbList.add(mData);
+            }
+        }
+        return dbList;
     }
 }

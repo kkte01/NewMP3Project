@@ -9,6 +9,7 @@ import android.os.ParcelFileDescriptor;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -22,9 +23,15 @@ import java.util.ArrayList;
 public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusicListAdapter.CustomViewHolder> {
     private Context context;
     private ArrayList<MusicData> dataArrayList;
+    // 리스너 객체 참조를 저장하는 변수
+    private OnItemClickListener itemClickListener = null;
+    private int adapterPosition;
 
-    public RecyclerMusicListAdapter(Context context) {
+
+
+    public RecyclerMusicListAdapter(Context context,ArrayList<MusicData>arrayList) {
         this.context = context;
+        this.dataArrayList = arrayList;
     }
 
     @NonNull
@@ -37,7 +44,8 @@ public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusic
     }
 
     @Override
-    public void onBindViewHolder(@NonNull RecyclerMusicListAdapter.CustomViewHolder holder, int position) {
+    public void onBindViewHolder(@NonNull RecyclerMusicListAdapter.CustomViewHolder holder, final int position) {
+        adapterPosition = position;
         //앨범이미지를 비트맵으로 만들기
         Bitmap bitmap = getAlbumImg(context,Integer.parseInt(dataArrayList.get(position).getAlbumArt()),200);
         if(bitmap != null){
@@ -48,10 +56,40 @@ public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusic
         holder.tvCount.setText(String.valueOf(dataArrayList.get(position).getClick()));
 
     }
+    // 커스텀 리스너 인터페이스
+    public interface OnItemClickListener{
+        void onItemClick(View view,int pos);
+    }
+
+
+    /*@NonNull
+    @Override
+    public RecyclerMusicListAdapter.CustomViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.music_data_layout,parent,false);
+
+        RecyclerMusicListAdapter.CustomViewHolder viewHolder = new CustomViewHolder(view);
+
+        return viewHolder;
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull CustomViewHolder holder, int position) {
+        MusicData musicData = dataArrayList.get(position);
+
+        //앨범이미지를 비트맵으로 만들기
+        Bitmap bitmap = getAlbumImg(context,Integer.parseInt(musicData.getAlbumArt()),200);
+        if(bitmap != null){
+            holder.imgAlbum.setImageBitmap(bitmap);
+        }
+        holder.tvMusicName.setText(musicData.getTitle());
+        holder.tvArtist.setText(musicData.getArtist());
+        holder.tvCount.setText(String.valueOf(musicData.getClick()));
+    }*/
 
     @Override
     public int getItemCount() {
         return dataArrayList != null ? dataArrayList.size() : 0;
+        //dataArrayList != null ? dataArrayList.size() : 0
     }
     public Bitmap getAlbumImg(Context context, int albumArt, int imgMaxSize){
         BitmapFactory.Options options = new BitmapFactory.Options();
@@ -63,7 +101,7 @@ public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusic
         */
         ContentResolver contentResolver = context.getContentResolver();
         //앨범아트는 uri 제공 X 직접 선언해줘야 한다.
-        Uri uri = Uri.parse("content://media/exteranl/audio/albumart/"+albumArt);
+        Uri uri = Uri.parse("content://media/external/audio/albumart/"+albumArt);
         if(uri != null){
             ParcelFileDescriptor fd = null;
             try {
@@ -121,6 +159,18 @@ public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusic
     public void setDataArrayList(ArrayList<MusicData> dataArrayList) {
         this.dataArrayList = dataArrayList;
     }
+    // OnItemClickListener 객체 참조를 어댑터에 전달하는 메서드
+    public void setOnItemClickListener(OnItemClickListener itemClickListener) {
+        this.itemClickListener = itemClickListener;
+    }
+
+    public int getAdapterPosition() {
+        return adapterPosition;
+    }
+
+    public void setAdapterPosition(int adapterPosition) {
+        this.adapterPosition = adapterPosition;
+    }
 
     public class CustomViewHolder extends RecyclerView.ViewHolder {
         public ImageView imgAlbum;
@@ -128,12 +178,22 @@ public class RecyclerMusicListAdapter extends RecyclerView.Adapter<RecyclerMusic
         public TextView tvArtist;
         public TextView tvCount;
 
-        public CustomViewHolder(@NonNull final View itemView) {
+        public CustomViewHolder(@NonNull View itemView) {
             super(itemView);
-            imgAlbum  = itemView.findViewById(R.id.imgAlbum);
-            tvMusicName  = itemView.findViewById(R.id.tvMusicName);
-            tvArtist  = itemView.findViewById(R.id.tvArtist);
-            tvCount  = itemView.findViewById(R.id.tvCount);
+            this.imgAlbum  = itemView.findViewById(R.id.d_imgAlbum);
+            this.tvMusicName  = itemView.findViewById(R.id.d_tvMusicName);
+            this.tvArtist  = itemView.findViewById(R.id.d_tvArtist);
+            this.tvCount  = itemView.findViewById(R.id.d_tvCount);
+
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    int pos = getAdapterPosition();
+                    if(pos != RecyclerView.NO_POSITION){
+                        itemClickListener.onItemClick(view,pos);
+                    }
+                }
+            });
         }
 
 

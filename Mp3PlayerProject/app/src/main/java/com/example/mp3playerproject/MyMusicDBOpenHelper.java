@@ -153,6 +153,7 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
 
         return musicData;
     }
+
     //데이터 베이스에서 노래를 삭제하는 함수
     public void deleteFromDB(ArrayList<MusicData>musicData,int i){
         //db열기
@@ -164,6 +165,7 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
         //자원반납
         sqLiteDatabase.close();
     }
+
     //좋아요 수 증감소에 관한 함수
     public void increaseOrDicreaseDatabase(ArrayList<MusicData>musicData,int i){
         //db열기
@@ -183,6 +185,7 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
     public void increaseClickCount(ArrayList<MusicData>musicData,int i){
         //db열기
         SQLiteDatabase sqLiteDatabase = this.getWritableDatabase();
+        musicData.get(i).setClick(musicData.get(i).getClick()+1);
         String query = "update myMusicTBL set click = "+(musicData.get(i).getClick()+1)+" where id = '"+
                 musicData.get(i).getId()+"';";
         sqLiteDatabase.execSQL(query);
@@ -263,7 +266,7 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
     // sdcard에서 검색한 음악과 DB를 비교해서 중복되지 않은 플레이리스트를 리턴
     public ArrayList<MusicData> compareArrayList(){
         ArrayList<MusicData> sdCardList = findMusic();
-        ArrayList<MusicData> dbList = selectMusicTbl();
+        ArrayList<MusicData> dbList = setMusicDataRecycleView();
 
         // DB가 비었다면 sdcard리스트 리턴
         if(dbList.isEmpty()){
@@ -276,14 +279,15 @@ public class MyMusicDBOpenHelper extends SQLiteOpenHelper {
         }
 
         // 두 리스트를 비교후 중복되지 않은 값을 DB리스트에 추가후 리턴
-        for(MusicData mData : sdCardList){
-            for(MusicData mData2 : dbList){
-                if(mData.getId() == mData2.getId()){
-                    continue;
-                }
-                dbList.add(mData);
+        int size = dbList.size();
+        for (int i = 0; i < size; ++i) {
+            if (dbList.contains(sdCardList.get(i))) {
+                continue;
             }
+            dbList.add(sdCardList.get(i));
+            ++size;
         }
+
         return dbList;
     }
 }

@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.Manifest;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -17,6 +18,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.util.ArrayList;
 
@@ -33,6 +37,8 @@ public class MainActivity extends AppCompatActivity {
     private MyMusicDBOpenHelper myMusicDBOpenHelper;
     private Fragment fragment;
     private int position;
+    private Gson gson;
+    private MusicPlayerFragment musicPlayerFragment;
 
 
     @Override
@@ -62,7 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         //음악파일을 가져와서 DB에 저장
-        boolean flag = myMusicDBOpenHelper.insertMusicDatabase();
+        arrayList = myMusicDBOpenHelper.compareArrayList();
         /*if(flag != false){
             Toast.makeText(getApplicationContext(),"데이터불러오기 성공",Toast.LENGTH_SHORT).show();
         }else{
@@ -75,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
             ft.commit();
 
         //arrayList에 넣기
-        arrayList = myMusicDBOpenHelper.setMusicDataRecycleView();
+        //arrayList = myMusicDBOpenHelper.setMusicDataRecycleView();
         arrayLikeList = myMusicDBOpenHelper.setLikeMusicDataList();
 
         //RecycleView에 넣어주기
@@ -88,6 +94,12 @@ public class MainActivity extends AppCompatActivity {
         //어댑터 리스트 연결해주기
         musicListAdapter.setDataArrayList(arrayList);
         likemusicListAdapter.setDataArrayList(arrayLikeList);
+
+        //무효화 영역처리
+        musicListAdapter.notifyDataSetChanged();
+        likemusicListAdapter.notifyDataSetChanged();
+
+        musicPlayerFragment = new MusicPlayerFragment();
 
 
 
@@ -110,10 +122,13 @@ public class MainActivity extends AppCompatActivity {
                         if(Math.abs(dx) > Math.abs((dy))){
                             if(dx > 0){
                                 drawerLayout.openDrawer(Gravity.LEFT,true);
-                                likemusicListAdapter.notifyDataSetChanged();
+
                             }else{
                                 drawerLayout.openDrawer(Gravity.RIGHT,true);
-                                musicListAdapter.notifyDataSetChanged();
+                                arrayLikeList = myMusicDBOpenHelper.setLikeMusicDataList();
+                                likemusicListAdapter.setDataArrayList(arrayLikeList);
+                                likemusicListAdapter.notifyDataSetChanged();
+
                             }
                         }
                         break;
@@ -128,9 +143,19 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemClick(View view, int pos) {
                 ((MusicPlayerFragment)fragment).selectedMusicPlayAndScreenSetting(pos);
-                Toast.makeText(getApplicationContext(),"위치 = "+pos,Toast.LENGTH_SHORT).show();
+                //Toast.makeText(getApplicationContext(),"위치 = "+pos,Toast.LENGTH_SHORT).show();
                 drawerLayout.closeDrawer(Gravity.LEFT);
                 musicListAdapter.notifyDataSetChanged();
+            }
+        });
+        likemusicListAdapter.setOnItemClickListener(new RecyclerMusicListAdapter.OnItemClickListener() {
+            @RequiresApi(api = Build.VERSION_CODES.N)
+            @Override
+            public void onItemClick(View view, int pos) {
+                ((MusicPlayerFragment)fragment).selectedLikeMusicPlayAndScreenSetting(pos);
+                //Toast.makeText(getApplicationContext(),"위치 = "+pos,Toast.LENGTH_SHORT).show();
+                drawerLayout.closeDrawer(Gravity.RIGHT);
+                likemusicListAdapter.notifyDataSetChanged();
             }
         });
 
@@ -146,11 +171,39 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
+        likemusicListAdapter.setDataArrayList(myMusicDBOpenHelper.setLikeMusicDataList());
     }
+    /*//마지막 재생곡 객체를 저장하는 함수(SharedPreferences 이용 객체를 넘기기 위해 JSON방식 사용)
+    private void saveSharedPreferences(int i){
+        //Gson 인스턴스 생성
+        //gson = new GsonBuilder().create();
+        //변환하기
+        //String lastMusicData = gson.toJson(musicData,MusicData.class);
+        //SharedPreferences sharedPreferences = getSharedPreferences("LastMusic",MODE_PRIVATE);
+        SharedPreferences sharedPreferences = getSharedPreferences("number",MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        MusicPlayerFragment musicPlayerFragment = new MusicPlayerFragment();
+        editor.putInt("index",musicPlayerFragment.getIndex());
+        //저장하기
+        editor.commit();
+    }*/
+    /*//SharedPreferences를 받는 함수
+    public int getSharedPreferences(){
+        SharedPreferences sp = getSharedPreferences("number",MODE_PRIVATE);
+        //String lastMusicData = sp.getString("index","");
+        //MusicData musicData = gson.fromJson(lastMusicData,MusicData.class);
+        SharedPreferences sharedPreferencesp = getSharedPreferences("number",MODE_PRIVATE);
+        int number = sharedPreferencesp.getInt("index",0);
+        return number;
+    }*/
+
     //get, set
     public ArrayList<MusicData> getArrayList() {
         return arrayList;
+    }
+
+    public RecyclerMusicListAdapter getMusicListAdapter() {
+        return musicListAdapter;
     }
 
     public void setMusicListAdapter(RecyclerMusicListAdapter musicListAdapter) {

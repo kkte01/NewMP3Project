@@ -1,8 +1,11 @@
 package com.example.mp3playerproject;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.OvalShape;
 import android.icu.text.SimpleDateFormat;
 import android.media.MediaMetadataRetriever;
 import android.media.MediaPlayer;
@@ -43,6 +46,7 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
     private RecyclerMusicListAdapter recyclerMusicListAdapter;
     private MyMusicDBOpenHelper myMusicDBOpenHelper;
     private int index;
+    private MusicData data;
 
     @Override
     public void onAttach(Context context) {
@@ -68,12 +72,16 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
         //시크바 변경에 관한 함수
         seekBarChangeMethod();
 
-
-
         return view;
+    }
+    //마지막 곡 정보 받아서 설정하는 함수
+    private void setFirstsetting() {
+
     }
 
     //아이디 찾는 함수
+    @SuppressLint("NewApi")
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     private void findViewByIdFunction(View view) {
         imgFragment = view.findViewById(R.id.imgFragment);
         tvFragCount = view.findViewById(R.id.tvFragCount);
@@ -86,6 +94,7 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
         ibPrevious = view.findViewById(R.id.ibPrevious);
         ibStart = view.findViewById(R.id.ibStart);
         ibNext = view.findViewById(R.id.ibNext);
+
     }
     //버튼 클릭에 대한 함수
     private void btnClickMethod() {
@@ -143,10 +152,12 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
                 if(ibLike.isActivated()){
                     Toast.makeText(mainActivity,"좋아요 해제!",Toast.LENGTH_SHORT).show();
                     Toast.makeText(mainActivity,"좋아요 목록에서 삭제완료",Toast.LENGTH_SHORT).show();
+                    //하트 버튼에 관한 DB업데이트 및 무효화영역처리에 관한 함수
                     ibLikeUpdateLiked(false,0);
                 }else {
                     Toast.makeText(mainActivity,"좋아요 !",Toast.LENGTH_SHORT).show();
                     Toast.makeText(mainActivity,"좋아요 목록에 추가완료",Toast.LENGTH_SHORT).show();
+                    //하트 버튼에 관한 DB업데이트 및 무효화영역처리에 관한 함수
                     ibLikeUpdateLiked(true,1);
                 }
 
@@ -185,7 +196,7 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
         mediaPlayer.reset();
         index = position;
         final ArrayList<MusicData> musicData = mainActivity.getArrayList();
-        MusicData data = musicData.get(position);
+        data = musicData.get(position);
         recyclerMusicListAdapter = new RecyclerMusicListAdapter(mainActivity,musicData);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
 
@@ -213,12 +224,69 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
             ibStart.setActivated(true);
 
             setSeekBarThread();
+            //재생이 끝났을 때 이벤트 처리 함수
             mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
                 @Override
                 public void onCompletion(MediaPlayer mediaPlayer) {
-                    ibNext.callOnClick();
                     myMusicDBOpenHelper = mainActivity.getMyMusicDBOpenHelper();
                     myMusicDBOpenHelper.increaseClickCount(mainActivity.getArrayList(),position);
+                    data.setClick(data.getClick());
+                    ibNext.callOnClick();
+                    mainActivity.getLikemusicListAdapter().notifyDataSetChanged();
+                    mainActivity.getMusicListAdapter().notifyDataSetChanged();
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    //좋아요 리스트 노래재생 함수
+    //선택된 음악재생및 화면 처리에 관한 함수
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public void selectedLikeMusicPlayAndScreenSetting(final int position) {
+        mediaPlayer.stop();
+        mediaPlayer.reset();
+        index = position;
+        final ArrayList<MusicData> musicData = mainActivity.getArrayLikeList();
+        data = musicData.get(position);
+        recyclerMusicListAdapter = new RecyclerMusicListAdapter(mainActivity,musicData);
+
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("mm:ss");
+
+        Bitmap bitmap = recyclerMusicListAdapter.getAlbumImg(mainActivity,Integer.parseInt(data.getAlbumArt()),200);
+        if(bitmap != null){
+            imgFragment.setImageBitmap(bitmap);
+        }
+        tvFragMusicName.setText(data.getTitle());
+        tvFragArtist.setText(data.getArtist());
+        tvFragCount.setText(String.valueOf(data.getClick()));
+        musicDuration.setText(simpleDateFormat.format(Integer.parseInt(data.getDuration())));
+
+        if(data.getLiked() ==1){
+            ibLike.setActivated(true);
+        }else{
+            ibLike.setActivated(false);
+        }
+        Uri musicURI = Uri.withAppendedPath(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,data.getId());
+        try {
+            mediaPlayer.setDataSource(mainActivity,musicURI);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+            seekBar.setProgress(0);
+            seekBar.setMax(Integer.parseInt(data.getDuration()));
+            ibStart.setActivated(true);
+
+            setSeekBarThread();
+            //재생이 끝났을 때 이벤트 처리 함수
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mediaPlayer) {
+                    myMusicDBOpenHelper = mainActivity.getMyMusicDBOpenHelper();
+                    myMusicDBOpenHelper.increaseClickCount(mainActivity.getArrayList(),position);
+                    data.setClick(data.getClick());
+                    ibNext.callOnClick();
+                    mainActivity.getLikemusicListAdapter().notifyDataSetChanged();
+                    mainActivity.getMusicListAdapter().notifyDataSetChanged();
                 }
             });
         } catch (IOException e) {
@@ -252,9 +320,33 @@ public class MusicPlayerFragment extends Fragment implements View.OnClickListene
         ibLike.setActivated(b);
         ArrayList<MusicData>musicData = mainActivity.getArrayList();
         musicData.get(index).setLiked(i);
-        myMusicDBOpenHelper.increaseOrDicreaseDatabase(mainActivity.getArrayList(),index);
-        RecyclerMusicListAdapter recyclerMusicListAdapter =mainActivity.getLikemusicListAdapter();
-        mainActivity.setArrayLikeList(myMusicDBOpenHelper.setLikeMusicDataList());
-        recyclerMusicListAdapter.notifyDataSetChanged();
+        if(i == 1){
+            myMusicDBOpenHelper.increaseOrDicreaseDatabase(mainActivity.getArrayList(),index);
+            mainActivity.getArrayLikeList().add(musicData.get(index));
+            mainActivity.setArrayLikeList(mainActivity.getArrayLikeList());
+        }else if(i == 0){
+            myMusicDBOpenHelper.increaseOrDicreaseDatabase(mainActivity.getArrayList(),index);
+            mainActivity.getArrayLikeList().remove(musicData.get(index));
+            mainActivity.setArrayLikeList(mainActivity.getArrayLikeList());
+        }
+        mainActivity.getLikemusicListAdapter().notifyDataSetChanged();
+    }
+
+    //get,set
+
+    public MusicData getData() {
+        return data;
+    }
+
+    public void setData(MusicData data) {
+        this.data = data;
+    }
+
+    public int getIndex() {
+        return index;
+    }
+
+    public void setIndex(int index) {
+        this.index = index;
     }
 }

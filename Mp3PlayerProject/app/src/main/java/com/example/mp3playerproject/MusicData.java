@@ -75,4 +75,17 @@ public class MusicData {
     public void setLiked(int liked) {
         this.liked = liked;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        boolean equal = false;
+
+        if (obj instanceof MusicData) {
+            MusicData data = (MusicData) obj;
+            equal = (this.id).equals(data.getId());
+        }
+
+        return equal;
+    }
 }
